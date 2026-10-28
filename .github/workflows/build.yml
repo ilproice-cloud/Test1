@@ -28,15 +28,18 @@ jobs:
         with:
           gradle-version: '8.8'
 
-      - name: Extract updated RealmForge source
+      - name: Extract patched RealmForge source
         shell: bash
         run: |
           set -euo pipefail
 
-          ZIP_FILE="$(find . -type f -name 'RealmForge-Updated-Source.zip' -print -quit)"
+          ZIP_FILE="$(find . -type f \
+            -name 'RealmForge-Updated-Source-Fixed-Compile.zip' \
+            -not -path './.git/*' -print -quit)"
 
           if [ -z "$ZIP_FILE" ]; then
-            echo "ERROR: RealmForge-Updated-Source.zip not found in the repository."
+            echo "ERROR: RealmForge-Updated-Source-Fixed-Compile.zip not found."
+            echo "Upload the ZIP to the root of your GitHub repository."
             exit 1
           fi
 
@@ -49,7 +52,9 @@ jobs:
         run: |
           set -euo pipefail
 
-          BUILD_FILE="$(find extracted -type f -name build.gradle -not -path '*/.gradle/*' -print -quit)"
+          BUILD_FILE="$(find extracted -type f \
+            -name build.gradle \
+            -not -path '*/.gradle/*' -print -quit)"
 
           if [ -z "$BUILD_FILE" ]; then
             echo "ERROR: build.gradle not found inside the ZIP."
