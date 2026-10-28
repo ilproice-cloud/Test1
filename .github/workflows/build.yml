@@ -28,18 +28,18 @@ jobs:
         with:
           gradle-version: '8.8'
 
-      - name: Extract patched RealmForge source
+      - name: Extract responsive RealmForge source
         shell: bash
         run: |
           set -euo pipefail
 
           ZIP_FILE="$(find . -type f \
-            -name 'RealmForge-Updated-Source-Fixed-Compile.zip' \
+            -name 'RealmForge-Updated-Source-Responsive-Book.zip' \
             -not -path './.git/*' -print -quit)"
 
           if [ -z "$ZIP_FILE" ]; then
-            echo "ERROR: RealmForge-Updated-Source-Fixed-Compile.zip not found."
-            echo "Upload the ZIP to the root of your GitHub repository."
+            echo "ERROR: RealmForge-Updated-Source-Responsive-Book.zip not found."
+            echo "Upload the ZIP to the root of your repository."
             exit 1
           fi
 
@@ -64,7 +64,7 @@ jobs:
 
           PROJECT_DIR="$(dirname "$BUILD_FILE")"
           echo "dir=$PROJECT_DIR" >> "$GITHUB_OUTPUT"
-          echo "Found project: $PROJECT_DIR"
+          echo "Building: $PROJECT_DIR"
 
       - name: Build RealmForge
         shell: bash
