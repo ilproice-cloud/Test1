@@ -28,17 +28,17 @@ jobs:
         with:
           gradle-version: '8.8'
 
-      - name: Extract responsive RealmForge source
+      - name: Extract RealmForge source
         shell: bash
         run: |
           set -euo pipefail
 
           ZIP_FILE="$(find . -type f \
-            -name 'RealmForge-Updated-Source-Responsive-Book.zip' \
+            -name 'RealmForge-Book-Navigation-Fix.zip' \
             -not -path './.git/*' -print -quit)"
 
           if [ -z "$ZIP_FILE" ]; then
-            echo "ERROR: RealmForge-Updated-Source-Responsive-Book.zip not found."
+            echo "ERROR: RealmForge-Book-Navigation-Fix.zip not found."
             echo "Upload the ZIP to the root of your repository."
             exit 1
           fi
