@@ -23,27 +23,25 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Install Gradle
+      - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.8'
 
-      - name: Extract project ZIP if needed
+      - name: Extract updated RealmForge source
         shell: bash
         run: |
           set -euo pipefail
 
-          if [ ! -f build.gradle ] && [ ! -f settings.gradle ]; then
-            ZIP_FILE="$(find . -maxdepth 2 -type f \( -iname 'realmforgeUpd2.zip' -o -iname 'realmforge.zip' \) -print -quit || true)"
+          ZIP_FILE="$(find . -type f -name 'RealmForge-Updated-Source.zip' -print -quit)"
 
-            if [ -z "$ZIP_FILE" ]; then
-              echo "ERROR: No Gradle project or RealmForge ZIP found."
-              exit 1
-            fi
-
-            mkdir -p extracted
-            unzip -oq "$ZIP_FILE" -d extracted
+          if [ -z "$ZIP_FILE" ]; then
+            echo "ERROR: RealmForge-Updated-Source.zip not found in the repository."
+            exit 1
           fi
+
+          mkdir -p extracted
+          unzip -oq "$ZIP_FILE" -d extracted
 
       - name: Locate Gradle project
         id: project
@@ -51,26 +49,26 @@ jobs:
         run: |
           set -euo pipefail
 
-          BUILD_FILE="$(find . -type f -name build.gradle -not -path '*/.gradle/*' -print -quit || true)"
+          BUILD_FILE="$(find extracted -type f -name build.gradle -not -path '*/.gradle/*' -print -quit)"
 
           if [ -z "$BUILD_FILE" ]; then
-            echo "ERROR: build.gradle not found."
-            find . -maxdepth 5 -type f | head -200
+            echo "ERROR: build.gradle not found inside the ZIP."
+            find extracted -maxdepth 5 -type f | head -200
             exit 1
           fi
 
           PROJECT_DIR="$(dirname "$BUILD_FILE")"
           echo "dir=$PROJECT_DIR" >> "$GITHUB_OUTPUT"
-          echo "Building: $PROJECT_DIR"
+          echo "Found project: $PROJECT_DIR"
 
-      - name: Build mod
+      - name: Build RealmForge
         shell: bash
         run: |
           set -euo pipefail
           cd "${{ steps.project.outputs.dir }}"
           gradle clean build --no-daemon
 
-      - name: Upload built JAR
+      - name: Upload mod JAR
         uses: actions/upload-artifact@v4
         with:
           name: RealmForge-Fabric-1.21.1
