@@ -23,8 +23,10 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Set up Gradle
+      - name: Set up Gradle 8.8
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.8'
 
       - name: Extract updated source
         shell: bash
@@ -53,18 +55,21 @@ jobs:
             -not -path '*/.gradle/*' -print -quit)"
 
           if [ -z "$BUILD_FILE" ]; then
-            echo "ERROR: build.gradle not found."
+            echo "ERROR: build.gradle not found inside the ZIP."
             exit 1
           fi
 
           PROJECT_DIR="$(dirname "$BUILD_FILE")"
           echo "dir=$PROJECT_DIR" >> "$GITHUB_OUTPUT"
+          echo "Project: $PROJECT_DIR"
 
-      - name: Build mod
+      - name: Build Fabric mod
         shell: bash
         run: |
           set -euo pipefail
           cd "${{ steps.project.outputs.dir }}"
+
+          gradle --version
           gradle clean build --no-daemon
 
       - name: Upload RealmForgeAlpha JAR
