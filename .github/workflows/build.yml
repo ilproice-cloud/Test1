@@ -18,22 +18,20 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Java 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.8'
 
-      - name: Extract RealmForgeAlpha
+      - name: Extract updated source
         shell: bash
         run: |
           set -euo pipefail
 
-          ZIP_FILE="RealmForgeAlpha.zip"
+          ZIP_FILE="RealmForgeAlpha-Updated-Source.zip"
 
           if [ ! -f "$ZIP_FILE" ]; then
             echo "ERROR: $ZIP_FILE not found in repository root."
@@ -50,22 +48,19 @@ jobs:
         run: |
           set -euo pipefail
 
-          BUILD_FILE="$(find realmforge_alpha -type f \
-            -name build.gradle \
-            -not -path '*/.gradle/*' \
-            -print -quit)"
+          BUILD_FILE="$(find realmforge_alpha \
+            -type f -name build.gradle \
+            -not -path '*/.gradle/*' -print -quit)"
 
           if [ -z "$BUILD_FILE" ]; then
-            echo "ERROR: build.gradle not found inside RealmForgeAlpha.zip"
-            find realmforge_alpha -maxdepth 5 -type f | head -200
+            echo "ERROR: build.gradle not found."
             exit 1
           fi
 
           PROJECT_DIR="$(dirname "$BUILD_FILE")"
           echo "dir=$PROJECT_DIR" >> "$GITHUB_OUTPUT"
-          echo "Building: $PROJECT_DIR"
 
-      - name: Build RealmForgeAlpha
+      - name: Build mod
         shell: bash
         run: |
           set -euo pipefail
@@ -76,5 +71,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: RealmForgeAlpha
-          path: '${{ steps.project.outputs.dir }}/build/libs/*.jar'
+          path: realmforge_alpha/**/build/libs/*.jar
           if-no-files-found: error
