@@ -1,10 +1,9 @@
-
 name: Build RealmForgeAlpha
 
 on:
   workflow_dispatch:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
 
 permissions:
   contents: read
@@ -14,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout source
         uses: actions/checkout@v4
 
       - name: Set up Java 21
@@ -28,22 +27,26 @@ jobs:
         with:
           gradle-version: '8.8'
 
-      - name: Find project and build mod
+      - name: Locate and build mod
         shell: bash
         run: |
           set -euo pipefail
 
-          BUILD_FILE="$(find . -maxdepth 5 -type f -name build.gradle \
-            -not -path '*/.gradle/*' | head -n 1)"
+          echo "Repository contents:"
+          ls -la
+
+          BUILD_FILE="$(find . -maxdepth 8 \
+            \( -name .git -o -name .gradle -o -name build \) -prune \
+            -o -type f \( -name build.gradle -o -name build.gradle.kts \) \
+            -print -quit)"
 
           if [ -z "$BUILD_FILE" ]; then
-            echo "ERROR: build.gradle was not found."
-            echo "Check that you uploaded the mod source files."
+            echo "::error::No Gradle build file found. The repository must contain the mod source project."
             exit 1
           fi
 
           PROJECT_DIR="$(dirname "$BUILD_FILE")"
-          echo "Building project in: $PROJECT_DIR"
+          echo "Project directory: $PROJECT_DIR"
 
           cd "$PROJECT_DIR"
           gradle --no-daemon clean build
