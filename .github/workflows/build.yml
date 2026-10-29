@@ -1,5 +1,5 @@
 
-name: Build RealmForgeAlpha UI Layout Fix
+name: Build RealmForgeAlpha Traits and Perks Fix
 
 on:
   workflow_dispatch:
@@ -14,41 +14,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Java 21
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.8'
 
-      - name: Extract source ZIP
-        shell: bash
+      - name: Extract source
         run: |
           set -euo pipefail
-
-          ZIP_FILE="RealmForgeAlpha-UI-Layout-Fix.zip"
-
-          if [ ! -f "$ZIP_FILE" ]; then
-            echo "ERROR: Source ZIP not found!"
-            exit 1
-          fi
-
+          test -f RealmForgeAlpha-Traits-Perks-Book-Fix.zip
           mkdir -p extracted
-          unzip -oq "$ZIP_FILE" -d extracted
+          unzip -oq RealmForgeAlpha-Traits-Perks-Book-Fix.zip -d extracted
 
       - name: Find Gradle project
         id: project
         shell: bash
         run: |
           set -euo pipefail
-
           BUILD_FILE="$(find extracted -type f \
             \( -name build.gradle -o -name build.gradle.kts \) \
             -not -path '*/build/*' \
@@ -56,15 +44,13 @@ jobs:
             -print -quit)"
 
           if [ -z "$BUILD_FILE" ]; then
-            echo "ERROR: No Gradle build file found."
-            find extracted -maxdepth 5 -type f | head -200
+            echo "ERROR: Gradle build file not found."
             exit 1
           fi
 
           echo "dir=$(dirname "$BUILD_FILE")" >> "$GITHUB_OUTPUT"
 
       - name: Build Fabric mod
-        shell: bash
         run: |
           set -euo pipefail
           cd "${{ steps.project.outputs.dir }}"
