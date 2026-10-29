@@ -1,5 +1,5 @@
 
-name: Build RealmForgeAlpha
+name: Build RealmForgeAlpha JJK Skill Port
 
 on:
   workflow_dispatch:
@@ -28,11 +28,11 @@ jobs:
         with:
           gradle-version: '8.8'
 
-      - name: Extract RealmForgeAlpha source
+      - name: Extract JJK skill port source
         shell: bash
         run: |
           set -euo pipefail
-          ZIP="RealmForgeAlpha-Temporary-Melee-Skills.zip"
+          ZIP="RealmForgeAlpha-JJK-Skill-Port.zip"
 
           if [ ! -f "$ZIP" ]; then
             echo "ERROR: Upload $ZIP to the repository root."
@@ -62,7 +62,7 @@ jobs:
 
           echo "dir=$(dirname "$FILE")" >> "$GITHUB_OUTPUT"
 
-      - name: Build Fabric mod
+      - name: Build mod
         shell: bash
         run: |
           set -euo pipefail
@@ -72,6 +72,6 @@ jobs:
       - name: Upload mod JAR
         uses: actions/upload-artifact@v4
         with:
-          name: RealmForgeAlpha-Temporary-Melee-Skills
+          name: RealmForgeAlpha-JJK-Skill-Port
           path: extracted/**/build/libs/*.jar
           if-no-files-found: error
