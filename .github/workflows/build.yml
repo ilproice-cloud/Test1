@@ -1,3 +1,4 @@
+
 name: Build RealmForge Fabric 1.21.1
 
 on:
@@ -27,25 +28,21 @@ jobs:
         with:
           gradle-version: '8.8'
 
-      - name: Extract RealmForge ZIP
+      - name: Extract latest RealmForge source
         shell: bash
         run: |
           set -euo pipefail
 
-          ZIP_FILE="$(find . -type f \
-            -name 'RealmForge-Book-Navigation-Fix.zip' \
-            -not -path './.git/*' \
-            -not -path './extracted/*' \
-            -print -quit)"
+          ZIP_FILE="RealmForge-Book-Navigation-Fix-2.zip"
 
-          if [ -z "$ZIP_FILE" ]; then
-            echo "ERROR: RealmForge-Book-Navigation-Fix.zip not found."
-            echo "Upload the ZIP to the root of your repository."
+          if [ ! -f "$ZIP_FILE" ]; then
+            echo "ERROR: $ZIP_FILE not found in repository root."
             exit 1
           fi
 
-          mkdir -p extracted
-          unzip -oq "$ZIP_FILE" -d extracted
+          rm -rf realmforge_latest
+          mkdir -p realmforge_latest
+          unzip -oq "$ZIP_FILE" -d realmforge_latest
 
       - name: Locate Gradle project
         id: project
@@ -53,20 +50,20 @@ jobs:
         run: |
           set -euo pipefail
 
-          BUILD_FILE="$(find extracted -type f \
+          BUILD_FILE="$(find realmforge_latest -type f \
             -name build.gradle \
             -not -path '*/.gradle/*' \
             -print -quit)"
 
           if [ -z "$BUILD_FILE" ]; then
-            echo "ERROR: No build.gradle found inside the ZIP."
-            find extracted -maxdepth 5 -type f | head -200
+            echo "ERROR: build.gradle not found in the extracted ZIP."
+            find realmforge_latest -maxdepth 5 -type f | head -200
             exit 1
           fi
 
           PROJECT_DIR="$(dirname "$BUILD_FILE")"
           echo "dir=$PROJECT_DIR" >> "$GITHUB_OUTPUT"
-          echo "Building project at: $PROJECT_DIR"
+          echo "Found project: $PROJECT_DIR"
 
       - name: Build RealmForge
         shell: bash
