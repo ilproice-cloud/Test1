@@ -5,6 +5,7 @@ on:
   workflow_dispatch:
   push:
     branches: [ main, master ]
+  pull_request:
 
 permissions:
   contents: read
@@ -25,13 +26,16 @@ jobs:
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.8'
 
-      - name: Build Fabric mod
+      - name: Build RealmForgeAlpha
+        working-directory: realmforge
         run: gradle --no-daemon clean build
 
       - name: Upload mod JAR
         uses: actions/upload-artifact@v4
         with:
-          name: RealmForgeAlpha
-          path: build/libs/*.jar
+          name: RealmForgeAlpha-Fabric-1.21.1
+          path: realmforge/build/libs/*.jar
           if-no-files-found: error
