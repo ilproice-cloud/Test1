@@ -1,5 +1,5 @@
 
-name: Build RealmForge Fabric 1.21.1
+name: Build RealmForgeAlpha
 
 on:
   workflow_dispatch:
@@ -28,21 +28,21 @@ jobs:
         with:
           gradle-version: '8.8'
 
-      - name: Extract latest RealmForge source
+      - name: Extract RealmForgeAlpha
         shell: bash
         run: |
           set -euo pipefail
 
-          ZIP_FILE="RealmForge-Book-Navigation-Fix-2.zip"
+          ZIP_FILE="RealmForgeAlpha.zip"
 
           if [ ! -f "$ZIP_FILE" ]; then
             echo "ERROR: $ZIP_FILE not found in repository root."
             exit 1
           fi
 
-          rm -rf realmforge_latest
-          mkdir -p realmforge_latest
-          unzip -oq "$ZIP_FILE" -d realmforge_latest
+          rm -rf realmforge_alpha
+          mkdir -p realmforge_alpha
+          unzip -oq "$ZIP_FILE" -d realmforge_alpha
 
       - name: Locate Gradle project
         id: project
@@ -50,31 +50,31 @@ jobs:
         run: |
           set -euo pipefail
 
-          BUILD_FILE="$(find realmforge_latest -type f \
+          BUILD_FILE="$(find realmforge_alpha -type f \
             -name build.gradle \
             -not -path '*/.gradle/*' \
             -print -quit)"
 
           if [ -z "$BUILD_FILE" ]; then
-            echo "ERROR: build.gradle not found in the extracted ZIP."
-            find realmforge_latest -maxdepth 5 -type f | head -200
+            echo "ERROR: build.gradle not found inside RealmForgeAlpha.zip"
+            find realmforge_alpha -maxdepth 5 -type f | head -200
             exit 1
           fi
 
           PROJECT_DIR="$(dirname "$BUILD_FILE")"
           echo "dir=$PROJECT_DIR" >> "$GITHUB_OUTPUT"
-          echo "Found project: $PROJECT_DIR"
+          echo "Building: $PROJECT_DIR"
 
-      - name: Build RealmForge
+      - name: Build RealmForgeAlpha
         shell: bash
         run: |
           set -euo pipefail
           cd "${{ steps.project.outputs.dir }}"
           gradle clean build --no-daemon
 
-      - name: Upload mod JAR
+      - name: Upload RealmForgeAlpha JAR
         uses: actions/upload-artifact@v4
         with:
-          name: RealmForge-Fabric-1.21.1
+          name: RealmForgeAlpha
           path: '${{ steps.project.outputs.dir }}/build/libs/*.jar'
           if-no-files-found: error
