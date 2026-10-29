@@ -1,1 +1,70 @@
 
+name: Build RealmForgeAlpha
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Extract project ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          ZIP_FILE="RealmForgeAlpha-JJK-Skill-Port-Fixed-Particle-API.zip"
+
+          if [ ! -f "$ZIP_FILE" ]; then
+            echo "::error::Missing $ZIP_FILE in repository root."
+            exit 1
+          fi
+
+          mkdir -p extracted
+          unzip -q "$ZIP_FILE" -d extracted
+
+      - name: Locate Gradle project
+        shell: bash
+        run: |
+          set -euo pipefail
+          WRAPPER="$(find extracted -type f -name gradlew -print -quit)"
+
+          if [ -z "$WRAPPER" ]; then
+            echo "::error::No gradlew found inside the ZIP."
+            exit 1
+          fi
+
+          PROJECT_DIR="$(dirname "$WRAPPER")"
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+          chmod +x "$WRAPPER"
+
+      - name: Build Fabric mod
+        run: |
+          set -euo pipefail
+          cd "$PROJECT_DIR"
+          ./gradlew --no-daemon clean build
+
+      - name: Upload built JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: RealmForgeAlpha-Fabric-1.21.1
+          path: |
+            ${{ env.PROJECT_DIR }}/build/libs/*.jar
+          if-no-files-found: error
