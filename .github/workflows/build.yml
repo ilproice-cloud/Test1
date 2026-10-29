@@ -14,60 +14,37 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Java 21
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.8'
 
-      - name: Extract mod source ZIP
-        shell: bash
+      - name: Extract source
         run: |
           set -euo pipefail
-
-          ZIP_FILE="RealmForgeAlpha-Fixed-Book-UI.zip"
-
-          if [ ! -f "$ZIP_FILE" ]; then
-            echo "ERROR: Source ZIP is missing!"
-            echo "Upload $ZIP_FILE to the repository root."
-            exit 1
-          fi
-
+          test -f RealmForgeAlpha-Fixed-Book-UI.zip
           mkdir -p extracted
-          unzip -oq "$ZIP_FILE" -d extracted
+          unzip -oq RealmForgeAlpha-Fixed-Book-UI.zip -d extracted
 
-      - name: Find Gradle project
+      - name: Find mod project
         id: project
         shell: bash
         run: |
           set -euo pipefail
-
-          BUILD_FILE="$(find extracted -type f \
-            \( -name build.gradle -o -name build.gradle.kts \) \
-            -not -path '*/.gradle/*' \
-            -not -path '*/build/*' \
-            -print -quit)"
-
+          BUILD_FILE="$(find extracted -type f \( -name build.gradle -o -name build.gradle.kts \) -not -path '*/build/*' -print -quit)"
           if [ -z "$BUILD_FILE" ]; then
-            echo "ERROR: No Gradle build file found in the source ZIP."
-            find extracted -maxdepth 5 -type f | head -200
+            echo "ERROR: Gradle build file missing from source ZIP."
             exit 1
           fi
+          echo "dir=$(dirname "$BUILD_FILE")" >> "$GITHUB_OUTPUT"
 
-          PROJECT_DIR="$(dirname "$BUILD_FILE")"
-          echo "dir=$PROJECT_DIR" >> "$GITHUB_OUTPUT"
-          echo "Found project: $PROJECT_DIR"
-
-      - name: Build Fabric mod
-        shell: bash
+      - name: Build mod
         run: |
           set -euo pipefail
           cd "${{ steps.project.outputs.dir }}"
