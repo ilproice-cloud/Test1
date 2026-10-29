@@ -1,10 +1,12 @@
 
-name: Build RealmForgeAlpha JJK Combo Update
+name: Build RealmForgeAlpha JJK Barrage
 
 on:
   workflow_dispatch:
   push:
-    branches: [main, master]
+    branches:
+      - main
+      - master
 
 permissions:
   contents: read
@@ -17,15 +19,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Extract combo update
+      - name: Extract project
         shell: bash
         run: |
           set -euo pipefail
 
-          ZIP_FILE="RealmForgeAlpha-JJK-Combo-Update.zip"
+          ZIP_FILE="RealmForgeAlpha-JJK-Barrage-Airtime-Fix.zip"
 
           if [ ! -f "$ZIP_FILE" ]; then
-            echo "::error::Missing $ZIP_FILE in repository root."
+            echo "::error::Missing project ZIP: $ZIP_FILE"
+            echo "Upload the ZIP to the root of your repository."
             exit 1
           fi
 
@@ -37,18 +40,21 @@ jobs:
         run: |
           set -euo pipefail
 
-          BUILD_FILE=$(find extracted -type f \
+          BUILD_FILE="$(find extracted -type f \
             \( -name build.gradle -o -name build.gradle.kts \) \
             -not -path '*/build/*' \
             -not -path '*/.gradle/*' \
-            -print -quit)
+            -print -quit)"
 
           if [ -z "$BUILD_FILE" ]; then
             echo "::error::No Gradle build file found in the ZIP."
+            find extracted -maxdepth 5 -type f | head -100
             exit 1
           fi
 
-          echo "PROJECT_DIR=$(dirname "$BUILD_FILE")" >> "$GITHUB_ENV"
+          PROJECT_DIR="$(dirname "$BUILD_FILE")"
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+          echo "Found project: $PROJECT_DIR"
 
       - name: Set up Java 21
         uses: actions/setup-java@v5
@@ -61,7 +67,7 @@ jobs:
         with:
           gradle-version: '8.8'
 
-      - name: Build mod
+      - name: Build Fabric mod
         shell: bash
         run: |
           set -euo pipefail
@@ -71,6 +77,6 @@ jobs:
       - name: Upload compiled mod
         uses: actions/upload-artifact@v4
         with:
-          name: RealmForgeAlpha-JJK-Combo-Update
+          name: RealmForgeAlpha-JJK-Barrage-Airtime-Fix
           path: extracted/**/build/libs/*.jar
           if-no-files-found: error
