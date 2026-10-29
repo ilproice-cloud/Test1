@@ -1,4 +1,5 @@
-name: Build RealmForgeAlpha
+
+name: RealmForgeAlpha Skill Book N Menu
 
 on:
   workflow_dispatch:
@@ -10,11 +11,32 @@ permissions:
 
 jobs:
   build:
+    name: Build RealmForgeAlpha Skill Book
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source
+      - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Extract Skill Book project
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ZIP_FILE="RealmForgeAlpha-Skill-Book-N-Menu-Root-Fixed.zip"
+
+          if [ ! -f "$ZIP_FILE" ]; then
+            echo "::error::Project ZIP not found: $ZIP_FILE"
+            echo "Files in repository:"
+            ls -la
+            exit 1
+          fi
+
+          mkdir -p extracted
+          unzip -oq "$ZIP_FILE" -d extracted
+
+          echo "Project ZIP extracted successfully."
+          find extracted -maxdepth 3 -type f | head -100
 
       - name: Set up Java 21
         uses: actions/setup-java@v4
@@ -27,33 +49,31 @@ jobs:
         with:
           gradle-version: '8.8'
 
-      - name: Locate and build mod
+      - name: Find and build Gradle project
         shell: bash
         run: |
           set -euo pipefail
 
-          echo "Repository contents:"
-          ls -la
-
-          BUILD_FILE="$(find . -maxdepth 8 \
-            \( -name .git -o -name .gradle -o -name build \) -prune \
+          BUILD_FILE="$(find extracted \
+            \( -name .gradle -o -name build \) -prune \
             -o -type f \( -name build.gradle -o -name build.gradle.kts \) \
             -print -quit)"
 
           if [ -z "$BUILD_FILE" ]; then
-            echo "::error::No Gradle build file found. The repository must contain the mod source project."
+            echo "::error::No Gradle build file found inside the ZIP."
+            find extracted -maxdepth 6 -type f | head -200
             exit 1
           fi
 
           PROJECT_DIR="$(dirname "$BUILD_FILE")"
-          echo "Project directory: $PROJECT_DIR"
+          echo "Building project in: $PROJECT_DIR"
 
           cd "$PROJECT_DIR"
           gradle --no-daemon clean build
 
-      - name: Upload mod JAR
+      - name: Upload compiled mod JAR
         uses: actions/upload-artifact@v4
         with:
-          name: RealmForgeAlpha-Fabric-1.21.1
-          path: '**/build/libs/*.jar'
+          name: RealmForgeAlpha-Skill-Book-N-Menu
+          path: extracted/**/build/libs/*.jar
           if-no-files-found: error
