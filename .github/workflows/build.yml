@@ -19,52 +19,68 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Java 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '21'
-          cache: gradle
-
       - name: Extract project ZIP
         shell: bash
         run: |
           set -euo pipefail
+
           ZIP_FILE="RealmForgeAlpha-JJK-Skill-Port-Fixed-Particle-API.zip"
 
           if [ ! -f "$ZIP_FILE" ]; then
             echo "::error::Missing $ZIP_FILE in repository root."
+            echo "Upload the project ZIP to your repository root."
             exit 1
           fi
 
           mkdir -p extracted
-          unzip -q "$ZIP_FILE" -d extracted
+          unzip -oq "$ZIP_FILE" -d extracted
 
       - name: Locate Gradle project
         shell: bash
         run: |
           set -euo pipefail
+
           WRAPPER="$(find extracted -type f -name gradlew -print -quit)"
 
-          if [ -z "$WRAPPER" ]; then
-            echo "::error::No gradlew found inside the ZIP."
-            exit 1
+          if [ -n "$WRAPPER" ]; then
+            PROJECT_DIR="$(dirname "$WRAPPER")"
+          else
+            BUILD_FILE="$(find extracted -type f \( -name build.gradle -o -name build.gradle.kts \) -not -path '*/build/*' -print -quit)"
+
+            if [ -z "$BUILD_FILE" ]; then
+              echo "::error::No Gradle project found in the ZIP."
+              exit 1
+            fi
+
+            PROJECT_DIR="$(dirname "$BUILD_FILE")"
           fi
 
-          PROJECT_DIR="$(dirname "$WRAPPER")"
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
-          chmod +x "$WRAPPER"
+          echo "Found project: $PROJECT_DIR"
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
 
       - name: Build Fabric mod
+        shell: bash
         run: |
           set -euo pipefail
           cd "$PROJECT_DIR"
-          ./gradlew --no-daemon clean build
+
+          if [ -f "./gradlew" ]; then
+            chmod +x ./gradlew
+            ./gradlew --no-daemon clean build
+          else
+            echo "::error::The project has no Gradle wrapper (gradlew)."
+            exit 1
+          fi
 
       - name: Upload built JAR
         uses: actions/upload-artifact@v4
         with:
           name: RealmForgeAlpha-Fabric-1.21.1
-          path: |
-            ${{ env.PROJECT_DIR }}/build/libs/*.jar
+          path: extracted/**/build/libs/*.jar
           if-no-files-found: error
