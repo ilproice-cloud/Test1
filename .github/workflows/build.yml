@@ -1,3 +1,4 @@
+
 name: Build RealmForgeAlpha
 
 on:
@@ -27,37 +28,54 @@ jobs:
         with:
           gradle-version: '8.8'
 
-      - name: Find project
+      - name: Extract mod source ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ZIP_FILE="RealmForgeAlpha-Fixed-Book-UI.zip"
+
+          if [ ! -f "$ZIP_FILE" ]; then
+            echo "ERROR: Source ZIP is missing!"
+            echo "Upload $ZIP_FILE to the repository root."
+            exit 1
+          fi
+
+          mkdir -p extracted
+          unzip -oq "$ZIP_FILE" -d extracted
+
+      - name: Find Gradle project
         id: project
         shell: bash
         run: |
           set -euo pipefail
 
-          BUILD_FILE="$(find . \
-            -type f -name build.gradle \
+          BUILD_FILE="$(find extracted -type f \
+            \( -name build.gradle -o -name build.gradle.kts \) \
             -not -path '*/.gradle/*' \
             -not -path '*/build/*' \
             -print -quit)"
 
           if [ -z "$BUILD_FILE" ]; then
-            echo "ERROR: build.gradle not found."
-            echo "Upload the extracted mod source, not just the workflow."
+            echo "ERROR: No Gradle build file found in the source ZIP."
+            find extracted -maxdepth 5 -type f | head -200
             exit 1
           fi
 
-          echo "dir=$(dirname "$BUILD_FILE")" >> "$GITHUB_OUTPUT"
+          PROJECT_DIR="$(dirname "$BUILD_FILE")"
+          echo "dir=$PROJECT_DIR" >> "$GITHUB_OUTPUT"
+          echo "Found project: $PROJECT_DIR"
 
-      - name: Build mod
+      - name: Build Fabric mod
         shell: bash
         run: |
           set -euo pipefail
           cd "${{ steps.project.outputs.dir }}"
           gradle clean build --no-daemon
 
-      - name: Upload RealmForgeAlpha JAR
+      - name: Upload JAR
         uses: actions/upload-artifact@v4
         with:
           name: RealmForgeAlpha
-          path: |
-            **/build/libs/*.jar
+          path: extracted/**/build/libs/*.jar
           if-no-files-found: error
