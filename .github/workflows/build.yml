@@ -5,7 +5,6 @@ on:
   workflow_dispatch:
   push:
     branches: [ main, master ]
-  pull_request:
 
 permissions:
   contents: read
@@ -29,13 +28,29 @@ jobs:
         with:
           gradle-version: '8.8'
 
-      - name: Build RealmForgeAlpha
-        working-directory: realmforge
-        run: gradle --no-daemon clean build
+      - name: Find project and build mod
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          BUILD_FILE="$(find . -maxdepth 5 -type f -name build.gradle \
+            -not -path '*/.gradle/*' | head -n 1)"
+
+          if [ -z "$BUILD_FILE" ]; then
+            echo "ERROR: build.gradle was not found."
+            echo "Check that you uploaded the mod source files."
+            exit 1
+          fi
+
+          PROJECT_DIR="$(dirname "$BUILD_FILE")"
+          echo "Building project in: $PROJECT_DIR"
+
+          cd "$PROJECT_DIR"
+          gradle --no-daemon clean build
 
       - name: Upload mod JAR
         uses: actions/upload-artifact@v4
         with:
           name: RealmForgeAlpha-Fabric-1.21.1
-          path: realmforge/build/libs/*.jar
+          path: '**/build/libs/*.jar'
           if-no-files-found: error
